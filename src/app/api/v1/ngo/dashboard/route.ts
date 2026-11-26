@@ -1,81 +1,106 @@
 import {NextResponse} from "next/server";
+import dayjs from "dayjs";
 import {prisma} from "../../../../../../prisma/prisma";
 import {getActiveUser} from "@/services/userService";
 import {getErrorMessage} from "@/utils/getErrorMessage";
-import {convertBigIntToNumber} from "@/utils/bigintUtils";
 
-// Get all donors of the ngo
+// Same radius the NGO "Blood requests" page uses around each covered region
+const REQUEST_RADIUS_METERS = 10000;
+
+type TNearbyRequestRow = {
+	id: string;
+	bloodGroup: string | null;
+	units: number | null;
+	urgency: string | null;
+	hospital: string | null;
+	requirementDate: Date | null;
+	lastActivity: string | null;
+};
+
+// NGO dashboard: headline numbers plus short lists of what needs attention
 export async function GET() {
 	try {
 		const {error, response, user} = await getActiveUser();
 		if (error) return response;
 
-		if (!!!user?.organisationId) {
+		if (!user.organisationId) {
 			return NextResponse.json({error: "Unauthorized request"}, {status: 403});
 		}
 
-		const donorsCountQuery = await prisma.$queryRawUnsafe(
-			`
-           SELECT
-            COUNT(d.id) AS "donorCount"
-            FROM "Donor" d
-            WHERE d."organisationId" = $1
-        `,
-			user?.organisationId,
+		const organisationId = user.organisationId;
+		const startOfMonth = dayjs().startOf("month").toDate();
+		const today = dayjs().startOf("day").toDate();
+
+		const [nearbyRequests, nearbyOpenCount, donorStatusCounts, availableDonors, bloodGroupCounts, pendingDonors, upcomingEvents, upcomingEventsCount, donationsThisMonth, totalCertificates] = await Promise.all([
+			prisma.$queryRaw<TNearbyRequestRow[]>`
+				SELECT r.id, r."bloodGroup", r.units, r.urgency, r.hospital, r."requirementDate", ra.activity AS "lastActivity"
+				FROM "Request" r
+				LEFT JOIN LATERAL (
+					SELECT activity FROM "RequestActivity" WHERE "requestId" = r.id ORDER BY "createdAt" DESC LIMIT 1
+				) ra ON true
+				WHERE EXISTS (
+					SELECT 1 FROM "OrganisationRegion" g
+					WHERE g."organisationId" = ${organisationId} AND ST_DWithin(r.location, g.location, ${REQUEST_RADIUS_METERS})
+				)
+				AND ra.activity IS DISTINCT FROM 'REQUEST_CLOSED'
+				ORDER BY r."createdAt" DESC
+				LIMIT 5
+			`,
+			prisma.$queryRaw<{count: bigint}[]>`
+				SELECT COUNT(*) AS count
+				FROM "Request" r
+				LEFT JOIN LATERAL (
+					SELECT activity FROM "RequestActivity" WHERE "requestId" = r.id ORDER BY "createdAt" DESC LIMIT 1
+				) ra ON true
+				WHERE EXISTS (
+					SELECT 1 FROM "OrganisationRegion" g
+					WHERE g."organisationId" = ${organisationId} AND ST_DWithin(r.location, g.location, ${REQUEST_RADIUS_METERS})
+				)
+				AND ra.activity IS DISTINCT FROM 'REQUEST_CLOSED'
+			`,
+			prisma.donor.groupBy({by: ["status"], where: {organisationId}, _count: {_all: true}}),
+			prisma.donor.count({where: {organisationId, status: "APPROVED", isAvailable: true}}),
+			prisma.donor.groupBy({by: ["bloodGroup"], where: {organisationId, status: "APPROVED"}, _count: {_all: true}}),
+			prisma.donor.findMany({
+				where: {organisationId, status: "PENDING"},
+				orderBy: {createdAt: "asc"},
+				take: 5,
+				select: {id: true, name: true, bloodGroup: true, locationName: true, createdAt: true},
+			}),
+			prisma.ngoEvent.findMany({
+				where: {organisationId, eventDate: {gte: today}, status: {not: "CLOSED"}},
+				orderBy: {eventDate: "asc"},
+				take: 5,
+				select: {id: true, eventName: true, eventDate: true, venueName: true, donorsRequired: true, registeredDonors: true},
+			}),
+			prisma.ngoEvent.count({where: {organisationId, eventDate: {gte: today}, status: {not: "CLOSED"}}}),
+			prisma.donationCertificate.count({where: {generatedAt: {gte: startOfMonth}, RequestDonor: {organisationId}}}),
+			prisma.donationCertificate.count({where: {RequestDonor: {organisationId}}}),
+		]);
+
+		const donorsByStatus = Object.fromEntries(donorStatusCounts.map((row) => [row.status, row._count._all]));
+
+		return NextResponse.json(
+			{
+				success: true,
+				stats: {
+					nearbyOpenRequests: Number(nearbyOpenCount[0]?.count ?? 0),
+					activeDonors: donorsByStatus.APPROVED ?? 0,
+					availableDonors,
+					pendingDonors: donorsByStatus.PENDING ?? 0,
+					upcomingEvents: upcomingEventsCount,
+					donationsThisMonth,
+					totalCertificates,
+				},
+				donorsByBloodGroup: Object.fromEntries(bloodGroupCounts.map((row) => [row.bloodGroup ?? "Unknown", row._count._all])),
+				nearbyRequests,
+				pendingDonors,
+				upcomingEvents,
+			},
+			{status: 200},
 		);
-
-		const donorsCountResult = convertBigIntToNumber(donorsCountQuery as Array<{donorCount: bigint}>) as unknown as Array<{donorCount: number}>;
-		const donorsCount = donorsCountResult[0]?.donorCount || 0;
-
-		const organisationRegions = await prisma.organisationRegion.findMany({
-			select: {
-				latitude: true,
-				longitude: true,
-			},
-			where: {
-				organisationId: user?.organisationId,
-			},
-		});
-
-		const coordinates = organisationRegions.map((region) => ({
-			lat: region.latitude,
-			lon: region.longitude,
-		}));
-
-		// Build the WHERE clause dynamically
-		const geoConditions = coordinates
-			.map((_, index) => {
-				const base = index * 2 + 1;
-				return `ST_DWithin(r.location::geography, ST_SetSRID(ST_Point($${base}, $${base + 1}), 4326)::geography, $${coordinates.length * 2 + 1})`;
-			})
-			.join(" OR ");
-
-		const whereConditions = geoConditions;
-		const values = coordinates.flatMap(({lon, lat}) => [lon, lat]);
-		values.push(10000); // radius
-
-		// Build the final SQL query
-		const sql = `
-		   SELECT
-			COUNT(r.id) AS "requestCount"
-            FROM "Request" r
-			WHERE ${whereConditions}
-		`;
-
-		// Execute the query
-		const requestsData = await prisma.$queryRawUnsafe(sql, ...values);
-
-		// Convert BigInt values to numbers for JSON serialization
-		const transformedData = convertBigIntToNumber(requestsData as Array<{requestCount: bigint}>) as unknown as Array<{requestCount: number}>;
-
-		// Extract the count from the first (and only) row
-		const requestsCount = transformedData[0]?.requestCount || 0;
-
-		return NextResponse.json({success: true, requestsCount, donorsCount}, {status: 200});
 	} catch (error) {
 		console.error("Error in NGO dashboard GET:", error);
-		// Sentry.captureException(error);
-		const errorMessage = getErrorMessage(error);
-		return NextResponse.json({error: errorMessage}, {status: 500});
+		return NextResponse.json({error: getErrorMessage(error)}, {status: 500});
 	}
 }

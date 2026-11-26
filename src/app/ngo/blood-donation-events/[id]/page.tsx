@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import axios from "axios";
-import { App, Card, Col, Descriptions, Row, Spin, Statistic, Tag } from "antd";
+import { App, Card, Col, Descriptions, Row, Select, Spin, Statistic } from "antd";
 import { useParams } from "next/navigation";
 import dayjs from "dayjs";
 import Image from "next/image";
 
 import { getErrorMessage } from "@/utils/getErrorMessage";
+import NgoEventRegistrations from "@/components/NgoEventRegistrations";
 
 interface EventDetails {
   id?: string;
@@ -48,40 +49,38 @@ function Page() {
 
   const [event, setEvent] = useState<EventDetails>();
 
-  useEffect(() => {
-    const fetchEvent = async () => {
+  const fetchEvent = useCallback(
+    async (showLoader = true) => {
       try {
-        setLoading(true);
-
+        if (showLoader) setLoading(true);
         const { data } = await axios.get(`/api/v1/ngo/events/${params.id}`);
-
         setEvent(data.event);
       } catch (error) {
         message.error(getErrorMessage(error));
       } finally {
         setLoading(false);
       }
-    };
+    },
+    [params.id, message],
+  );
 
+  useEffect(() => {
     void fetchEvent();
-  }, [params.id, message]);
+  }, [fetchEvent]);
+
+  const handleStatusChange = async (status: EventDetails["status"]) => {
+    try {
+      await axios.patch(`/api/v1/ngo/events/${params.id}`, { status });
+      message.success("Camp status updated");
+      void fetchEvent(false);
+    } catch (error) {
+      message.error(getErrorMessage(error));
+    }
+  };
 
   const imageUrl = event?.imageFilekey
     ? `${process.env.NEXT_PUBLIC_APP_URL}/api/s3/ngo-events/${event.imageFilekey}`
     : null;
-
-  const getStatusColor = () => {
-    switch (event?.status) {
-      case "ACTIVE":
-        return "blue";
-      case "ONGOING":
-        return "green";
-      case "CLOSED":
-        return "red";
-      default:
-        return "default";
-    }
-  };
 
   return (
     <div
@@ -111,7 +110,7 @@ function Page() {
       ) : (
         <>
           <Card className="mb-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h1 className="text-3xl font-semibold mb-2">
                   {event?.eventName}
@@ -121,15 +120,19 @@ function Page() {
               </div>
 
               {event?.status && (
-                <Tag
-                  color={getStatusColor()}
-                  style={{
-                    padding: "6px 16px",
-                    fontSize: 14,
-                  }}
-                >
-                  {event.status}
-                </Tag>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">Status</span>
+                  <Select
+                    value={event.status}
+                    onChange={handleStatusChange}
+                    className="w-[150px]"
+                    options={[
+                      { label: "Upcoming", value: "ACTIVE" },
+                      { label: "Ongoing", value: "ONGOING" },
+                      { label: "Closed", value: "CLOSED" },
+                    ]}
+                  />
+                </div>
               )}
             </div>
           </Card>
@@ -191,6 +194,14 @@ function Page() {
               </Card>
             </Col>
           </Row>
+
+          {event?.id && (
+            <NgoEventRegistrations
+              eventId={event.id}
+              eventDate={event.eventDate}
+              onCountsChanged={() => void fetchEvent(false)}
+            />
+          )}
 
           <Card title="Event Information" className="mb-6">
             <Descriptions bordered column={1}>

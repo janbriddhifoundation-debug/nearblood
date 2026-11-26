@@ -8,25 +8,10 @@ import {Avatar, Button, Card, Spin, Switch, Tag, message} from "antd";
 import {CalendarOutlined, CheckCircleOutlined, ClockCircleOutlined, HeartOutlined, MailOutlined, PhoneOutlined, TeamOutlined} from "@ant-design/icons";
 import Show from "@/components/Show";
 import DonorDonationsTable from "@/components/Donor/DonorDonationsTable";
+import StatCard from "@/components/StatCard";
 import {getErrorMessage} from "@/utils/getErrorMessage";
 import {IDonorDonation, IDonorMe} from "@/types/donorTypes";
 
-function StatCard({icon, title, value, hint}: {icon: React.ReactNode; title: string; value: React.ReactNode; hint?: React.ReactNode}) {
-	return (
-		<Card className="h-full !rounded-xl" styles={{body: {padding: 20}}}>
-			<div className="flex items-start gap-4">
-				<div className="flex-none h-12 w-12 rounded-full bg-red-100 flex items-center justify-center text-xl !text-red-500">{icon}</div>
-				<div className="min-w-0">
-					<div className="text-sm text-gray-500">{title}</div>
-					<div className="text-2xl font-semibold text-gray-900 mt-1">{value}</div>
-					<Show IF={!!hint}>
-						<div className="text-xs text-gray-500 mt-1">{hint}</div>
-					</Show>
-				</div>
-			</div>
-		</Card>
-	);
-}
 
 const DonorDashboardView = () => {
 	const [loading, setLoading] = useState(true);

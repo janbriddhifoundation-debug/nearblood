@@ -4,6 +4,7 @@ import {getActiveUser} from "@/services/userService";
 import {getErrorMessage} from "@/utils/getErrorMessage";
 import {isPersonalRole} from "@/utils/roleRoutes";
 import {donorSelfRegistrationSchema} from "@/validationSchema/donorSchema";
+import {notifyOrganisation} from "@/services/notificationService";
 
 // Onboarding state for the signed-in person: their own donor profile, or an NGO-added record with the same email they can claim
 export async function GET() {
@@ -103,6 +104,13 @@ export async function POST(req: NextRequest) {
 			`;
 
 			return savedDonor;
+		});
+
+		await notifyOrganisation(organisationId, {
+			type: "DONOR_SIGNUP",
+			title: "New donor wants to join",
+			message: `${details.name} (${details.bloodGroup}) signed up to donate through your organisation.`,
+			link: "/ngo/donors",
 		});
 
 		return NextResponse.json({success: true, donor: {id: donor.id, status: donor.status}}, {status: 201});

@@ -6,8 +6,9 @@ import {usePathname} from "next/navigation";
 import {signOut, useSession} from "next-auth/react";
 import {useRouter} from "next-nprogress-bar";
 import {Avatar, Button, Drawer, Grid, Layout, Menu, MenuProps} from "antd";
-import {DashboardOutlined, HeartOutlined, HistoryOutlined, LogoutOutlined, MenuOutlined, SafetyCertificateOutlined, UserOutlined} from "@ant-design/icons";
+import {CalendarOutlined, CustomerServiceOutlined, DashboardOutlined, HeartOutlined, HistoryOutlined, LogoutOutlined, MenuOutlined, SafetyCertificateOutlined, UserOutlined} from "@ant-design/icons";
 import Show from "@/components/Show";
+import NotificationBell from "@/components/NotificationBell";
 
 const {Sider, Content, Header} = Layout;
 const {useBreakpoint} = Grid;
@@ -18,7 +19,9 @@ const MENU_ITEMS: MenuProps["items"] = [
 	{key: "/donor/dashboard", icon: <DashboardOutlined />, label: "Dashboard"},
 	{key: "/donor/donations", icon: <HistoryOutlined />, label: "My donations"},
 	{key: "/donor/certificates", icon: <SafetyCertificateOutlined />, label: "Certificates"},
+	{key: "/donor/camps", icon: <CalendarOutlined />, label: "Blood camps"},
 	{key: "/donor/profile", icon: <UserOutlined />, label: "Profile"},
+	{key: "/donor/support", icon: <CustomerServiceOutlined />, label: "Help & support"},
 	{type: "divider"},
 	{key: "/user/dashboard", icon: <HeartOutlined />, label: "Request blood"},
 	{key: "/logout", icon: <LogoutOutlined />, label: "Logout"},
@@ -75,6 +78,7 @@ const DonorLayout = ({children}: {children: React.ReactNode}) => {
 						</Show>
 					</div>
 					<div className="flex items-center gap-3">
+						<NotificationBell />
 						<span className="font-medium hidden sm:inline">{session?.user?.name}</span>
 						<Avatar size="large" icon={<UserOutlined />} src={session?.user?.image || undefined} alt={session?.user?.name ?? "Donor"} />
 					</div>

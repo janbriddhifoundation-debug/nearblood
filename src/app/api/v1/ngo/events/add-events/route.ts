@@ -3,6 +3,7 @@ import { prisma } from "../../../../../../../prisma/prisma";
 import { getActiveUser } from "@/services/userService";
 import { getErrorMessage } from "@/utils/getErrorMessage";
 import { ngoEventSchema } from "@/validationSchema/NgoEventSchema";
+import { notifyDonors } from "@/services/notificationService";
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,6 +23,8 @@ export async function POST(req: NextRequest) {
     const organisation = await prisma.organisation.findFirst({
       where: {
         userId: user.id,
+        // Only approved NGOs can run camps
+        approvedAt: { not: null },
       },
     });
 
@@ -77,6 +80,21 @@ export async function POST(req: NextRequest) {
         WHERE "id" = ${event.id}
       `;
     }
+
+    // Tell this NGO's active donors about the new camp
+    const donors = await prisma.donor.findMany({
+      where: { organisationId: organisation.id, status: "APPROVED", isAvailable: true, userId: { not: null } },
+      select: { id: true },
+    });
+    await notifyDonors(
+      donors.map((donor) => donor.id),
+      {
+        type: "CAMP_CREATED",
+        title: `New blood camp: ${event.eventName}`,
+        message: `${organisation.name ?? "Your NGO"} is holding a camp on ${event.eventDate.toDateString()}${event.venueName ? ` at ${event.venueName}` : ""}. Register if you can donate.`,
+        link: "/donor/camps",
+      },
+    );
 
     return NextResponse.json(
       {

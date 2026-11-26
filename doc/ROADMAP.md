@@ -7,8 +7,8 @@ _Last updated: 2026-11-26_
 | Area | State |
 |---|---|
 | Sign-in | Google only. First login picks a role in a pop-up (Requester or NGO). Admin is set by hand in the DB. |
-| NGO | Registration → admin approval → dashboard. Built: requests near their regions, donors, assign donors, donation verification, certificates (QR, public verify), events, reports, impact, profile. Placeholders: Communication & notification, Support & helpdesk. Dashboard home is two count cards. |
-| Super admin | Built: dashboard stats, blood request monitoring, NGO management/approval, donor & donation oversight. Placeholders: 9 menu items (users, proof control, certificates & branding, events, reports, settings, logs, staff, support). |
+| NGO | Registration → admin approval → dashboard. Built: overview dashboard, requests near their regions, donors (with sign-up approvals), assign donors, donation verification, certificates (QR, public verify), camps with donor registrations, communication, reports, impact, profile, support tickets. |
+| Super admin | Built: dashboard stats, blood request monitoring, NGO management/approval, donor & donation oversight. Placeholders: 8 menu items (users, proof control, certificates & branding, events, reports, settings, logs, staff). |
 | Requester (`user`) | Built but hidden from the public: raise request, track status, upload proof. "Support initiative" page is a stub (mock upload, old "Floating Blood Bank" name). |
 | Donor | Self sign-up with nearby-NGO picker, NGO approval, donor dashboard (donations, certificates, profile). Same account can also request blood. |
 | Public site | Home page is a placeholder hero. Certificate verification page works. |
@@ -96,14 +96,18 @@ Existing rows: `status = APPROVED`, `source = NGO`.
 - Public pages: About, How it works, Donor eligibility guide, Find NGOs near me, Events/camps list, Privacy policy, Terms, Contact.
 - SEO metadata, Open Graph images, sitemap. Mobile-first checks.
 
-## Phase 3 — Finish the NGO dashboard
+## Phase 3 — Finish the NGO dashboard ✅ built 2026-11-26
 
-- Real dashboard overview: open requests near them, pending donor approvals, upcoming events, units this month.
-- Notify the NGO when a donor signs up under them (and the donor when approved/rejected).
-- Communication & notification: in-app notifications (replaces the fake bell), message donors by blood group or area.
-- Support & helpdesk: tickets to the platform team (shared with admin Support & grievance).
-- Events: donors register for camps (an `EventRegistration` table instead of the bare `registeredDonors` count), attendance, units collected.
-- Bulk donor import (CSV).
+Schema SQL: `doc/sql/2026-11-26_phase3_notifications_support_camps.sql` (applied to the dev DB): `Notification`, `NgoBroadcast`, `SupportTicket`, `SupportTicketMessage`, `EventRegistration`.
+
+- **Notifications** (`services/notificationService.ts`, `/api/v1/notifications`, bell in every dashboard, polled every minute). Sent when: an NGO registers (to admins), an NGO is approved, a donor signs up under an NGO, a donor is approved/rejected, donors are assigned to a request, a certificate is issued, a camp is created (to the NGO's active donors), a donor registers for a camp, camp attendance is recorded, support tickets get new tickets/replies/status changes, and an NGO sends a message.
+- **NGO dashboard** rebuilt: open requests near them, active/available donors, upcoming camps, donations this month, pending donor sign-ups, camp progress, active donors by blood group.
+- **Communication** (`/ngo/communication-notification`): message approved donors filtered by blood group and availability; shows live how many will receive it (only donors with a login); history of sent messages.
+- **Support tickets**: one system for everyone. NGOs: Support & helpdesk; donors/requesters: new Help & support page; admins: Support & grievance (all tickets, status, replies). `components/Support/SupportCenter.tsx`.
+- **Blood camps for donors**: donors see their NGO's camps and any approved NGO's camp within 25 km (`/donor/camps`), register/cancel, see past camps. NGOs see registrations on the camp page, mark "donated" (with units) or "didn't come", and change camp status. Camp counts stay in sync; attending updates the donor's last donation date.
+- Fixed: pending NGOs could create/list camps (event routes looked up the organisation without checking approval).
+
+Still open from this phase: bulk donor import (CSV); email/SMS delivery for notifications (Phase 6).
 
 ## Phase 4 — Finish the super admin
 

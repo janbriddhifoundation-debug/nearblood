@@ -22,6 +22,8 @@ export async function GET(req: NextRequest) {
     const organisation = await prisma.organisation.findFirst({
       where: {
         userId: user.id,
+        // Only approved NGOs can run camps
+        approvedAt: { not: null },
       },
       select: {
         id: true,

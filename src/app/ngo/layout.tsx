@@ -95,7 +95,7 @@ export default function NgoLayout({children}: {children: React.ReactNode}) {
 		{
 			key: "/ngo/communication-notification",
 			icon: <MessageOutlined />,
-			label: "Communication & notification",
+			label: "Communication",
 		},
 		{
 			key: "/ngo/profile-settings",

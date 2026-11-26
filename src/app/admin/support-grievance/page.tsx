@@ -1,30 +1,13 @@
-import React from "react";
-import Image from "next/image";
+import SupportCenter from "@/components/Support/SupportCenter";
 
-function page() {
-  return (
-    <div className="min-h-screen flex flex-col px-8 py-8">
-      <h1 className="text-2xl font-semibold text-gray-800 mb-2">
-        Support and grievance
-      </h1>
+const Page = () => {
+	return (
+		<div className="p-4 md:p-8 max-w-[1320px] mx-auto">
+			<div className="text-2xl font-semibold mb-2">Support & grievance</div>
+			<div className="text-sm text-gray-600 mb-8">Tickets raised by NGOs, donors and requesters. Replies notify the person who raised the ticket.</div>
+			<SupportCenter mode="admin" />
+		</div>
+	);
+};
 
-      <p className="text-sm text-gray-500 mb-10 max-w-2xl">
-        This page will be used to offer supports and grievance redressal in the
-        system.
-      </p>
-
-      <div className="w-full flex justify-center mt-20">
-        <Image
-          src="/underDevelopment.svg"
-          alt="Under development"
-          width={420}
-          height={420}
-          className="opacity-90"
-          priority
-        />
-      </div>
-    </div>
-  );
-}
-
-export default page;
+export default Page;

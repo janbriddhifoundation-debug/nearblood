@@ -7,6 +7,7 @@ import {CheckCircleOutlined, ClockCircleOutlined, HeartOutlined, SafetyCertifica
 import AdminDonorsPanel from "@/components/Admin/AdminDonorsPanel";
 import AdminDonationsPanel from "@/components/Admin/AdminDonationsPanel";
 import {BLOOD_GROUPS} from "@/data/Others";
+import StatCard from "@/components/StatCard";
 import {getErrorMessage} from "@/utils/getErrorMessage";
 
 type TSummary = {
@@ -20,20 +21,6 @@ type TSummary = {
 	pendingCertificates: number;
 };
 
-function StatCard({icon, title, value, hint}: {icon: React.ReactNode; title: string; value: number; hint?: string}) {
-	return (
-		<Card className="h-full" styles={{body: {padding: 20}}}>
-			<div className="flex items-start gap-4">
-				<div className="flex-none h-11 w-11 rounded-full bg-red-100 flex items-center justify-center text-lg !text-red-500">{icon}</div>
-				<div>
-					<div className="text-sm text-gray-500">{title}</div>
-					<div className="text-3xl font-semibold">{value}</div>
-					{hint && <div className="text-xs text-gray-500 mt-1">{hint}</div>}
-				</div>
-			</div>
-		</Card>
-	);
-}
 
 const Page = () => {
 	const [loading, setLoading] = useState(true);

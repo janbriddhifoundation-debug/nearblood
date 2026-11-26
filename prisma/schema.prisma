@@ -14,18 +14,21 @@ enum NgoEventStatus {
 }
 
 model User {
-  id           String         @id @default(cuid())
-  name         String?
-  email        String         @unique
-  image        String?
-  role         String?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  status       String?        @default("active")
-  Organisation Organisation[]
-  requests     Request[]
-  Upload       Upload[]
-  Donor        Donor?
+  id                    String                 @id @default(cuid())
+  name                  String?
+  email                 String                 @unique
+  image                 String?
+  role                  String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  status                String?                @default("active")
+  Organisation          Organisation[]
+  requests              Request[]
+  Upload                Upload[]
+  Donor                 Donor?
+  Notifications         Notification[]
+  SupportTickets        SupportTicket[]
+  SupportTicketMessages SupportTicketMessage[]
 }
 
 model Request {
@@ -115,7 +118,9 @@ model Organisation {
   OrganisationContact OrganisationContact[]
   OrganisationRegion  OrganisationRegion[]
   RequestDonors       RequestDonors[]
-  NgoEvents NgoEvent[]
+  NgoEvents           NgoEvent[]
+  NgoBroadcasts       NgoBroadcast[]
+  SupportTickets      SupportTicket[]
 }
 
 model OrganisationRegion {
@@ -155,45 +160,46 @@ enum DonorSource {
 }
 
 model Donor {
-  id             String                    @id @default(cuid())
-  organisationId String?
-  userId         String?                   @unique
-  name           String?
-  gender         String?
-  email          String?                   @unique(map: "donor_unique_email")
-  phone          String?                   @unique(map: "donor_unique_phone")
-  dob            DateTime?                 @db.Date
-  bloodGroup     String?
-  address        String?
-  photo          String?
-  status         DonorStatus               @default(APPROVED)
-  source         DonorSource               @default(NGO)
-  locationName   String?
-  latitude       Float?
-  longitude      Float?
-  location       Unsupported("geography")?
-  isAvailable    Boolean                   @default(true)
-  lastDonatedAt  DateTime?
-  createdAt      DateTime?                 @default(now())
-  updatedAt      DateTime?                 @updatedAt
-  Organisation   Organisation?             @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-  User           User?                     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  RequestDonors  RequestDonors[]
+  id                 String                    @id @default(cuid())
+  organisationId     String?
+  userId             String?                   @unique
+  name               String?
+  gender             String?
+  email              String?                   @unique(map: "donor_unique_email")
+  phone              String?                   @unique(map: "donor_unique_phone")
+  dob                DateTime?                 @db.Date
+  bloodGroup         String?
+  address            String?
+  photo              String?
+  status             DonorStatus               @default(APPROVED)
+  source             DonorSource               @default(NGO)
+  locationName       String?
+  latitude           Float?
+  longitude          Float?
+  location           Unsupported("geography")?
+  isAvailable        Boolean                   @default(true)
+  lastDonatedAt      DateTime?
+  createdAt          DateTime?                 @default(now())
+  updatedAt          DateTime?                 @updatedAt
+  Organisation       Organisation?             @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  User               User?                     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  RequestDonors      RequestDonors[]
+  EventRegistrations EventRegistration[]
 
   @@index([organisationId, status])
 }
 
 model RequestDonors {
-  id             String        @id @default(cuid())
+  id             String    @id @default(cuid())
   requestId      String?
   donorId        String?
   createdAt      DateTime?
   updatedAt      DateTime?
   organisationId String?
 
-  Donor          Donor?        @relation(fields: [donorId], references: [id], onDelete: Cascade)
-  Organisation   Organisation? @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-  Request        Request?      @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  Donor        Donor?        @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  Organisation Organisation? @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  Request      Request?      @relation(fields: [requestId], references: [id], onDelete: Cascade)
 
   DonationCertificate DonationCertificate?
 
@@ -208,46 +214,137 @@ model DonationCertificate {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  RequestDonor      RequestDonors @relation(fields: [requestDonorId], references: [id], onDelete: Cascade)
+  RequestDonor RequestDonors @relation(fields: [requestDonorId], references: [id], onDelete: Cascade)
 }
 
 model NgoEvent {
-  id                String            @id @default(cuid())
+  id String @id @default(cuid())
 
-  organisationId    String
+  organisationId String
 
-  eventName         String
-  purpose           String?
+  eventName String
+  purpose   String?
 
-  eventDate         DateTime          @db.Date
+  eventDate DateTime @db.Date
 
-  venueName         String?
+  venueName String?
 
-  latitude          Float?
-  longitude         Float?
-  location          Unsupported("geography")?
+  latitude  Float?
+  longitude Float?
+  location  Unsupported("geography")?
 
-  partnerBloodBank  String?
+  partnerBloodBank String?
 
-  donorsRequired    Int?
+  donorsRequired Int?
 
-  registeredDonors  Int               @default(0)
-  actualDonors      Int               @default(0)
-  unitsCollected    Int               @default(0)
+  registeredDonors Int @default(0)
+  actualDonors     Int @default(0)
+  unitsCollected   Int @default(0)
 
-  imageFilekey      String?
+  imageFilekey String?
 
-  status            NgoEventStatus    @default(ACTIVE)
+  status NgoEventStatus @default(ACTIVE)
 
-  notes             String?
+  notes String?
 
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  Organisation      Organisation      @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  Organisation  Organisation        @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  Registrations EventRegistration[]
 
   @@index([organisationId])
   @@index([eventDate])
   @@index([status])
   @@index([status, eventDate])
+}
+
+// In-app notifications shown under the dashboard bell
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  message   String
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  User      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt(sort: Desc)])
+}
+
+// A message an NGO sent to its donors (delivered as notifications)
+model NgoBroadcast {
+  id             String       @id @default(cuid())
+  organisationId String
+  title          String
+  message        String
+  bloodGroups    String[]
+  availableOnly  Boolean      @default(true)
+  recipientCount Int          @default(0)
+  createdAt      DateTime     @default(now())
+  Organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@index([organisationId, createdAt(sort: Desc)])
+}
+
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model SupportTicket {
+  id             String                 @id @default(cuid())
+  userId         String
+  organisationId String?
+  subject        String
+  category       String
+  status         SupportTicketStatus    @default(OPEN)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  User           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Organisation   Organisation?          @relation(fields: [organisationId], references: [id], onDelete: SetNull)
+  Messages       SupportTicketMessage[]
+
+  @@index([userId, updatedAt(sort: Desc)])
+  @@index([status, updatedAt(sort: Desc)])
+}
+
+model SupportTicketMessage {
+  id        String        @id @default(cuid())
+  ticketId  String
+  userId    String
+  isStaff   Boolean       @default(false)
+  message   String
+  createdAt DateTime      @default(now())
+  Ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  User      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId, createdAt])
+}
+
+enum EventRegistrationStatus {
+  REGISTERED
+  ATTENDED
+  NO_SHOW
+  CANCELLED
+}
+
+// A donor signed up for an NGO's blood donation camp
+model EventRegistration {
+  id           String                  @id @default(cuid())
+  eventId      String
+  donorId      String
+  status       EventRegistrationStatus @default(REGISTERED)
+  unitsDonated Int?
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  Event        NgoEvent                @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  Donor        Donor                   @relation(fields: [donorId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, donorId])
+  @@index([donorId])
 }

@@ -3,6 +3,7 @@ import { prisma } from "../../../../../../../prisma/prisma";
 import { getActiveUser } from "@/services/userService";
 import { getErrorMessage } from "@/utils/getErrorMessage";
 import * as Sentry from "@sentry/nextjs";
+import {notifyDonors} from "@/services/notificationService";
 
 function incrementSuffix(suffix: string) {
   let firstLetter = suffix[0];
@@ -174,6 +175,15 @@ export async function POST(req: NextRequest) {
 
       return created;
     });
+
+    if (requestDonor.donorId) {
+      await notifyDonors([requestDonor.donorId], {
+        type: "CERTIFICATE_ISSUED",
+        title: "Your donation certificate is ready",
+        message: `Certificate ${certificate.certificateNumber} - thank you for donating blood!`,
+        link: `/donor/certificates/${requestDonor.id}`,
+      });
+    }
 
     return NextResponse.json(
       {

@@ -4,6 +4,7 @@ import {getErrorMessage} from "@/utils/getErrorMessage";
 import {prisma} from "../../../../../../prisma/prisma";
 import {ngoRegSchema} from "@/validationSchema/NgoSchema";
 import {createId} from "@paralleldrive/cuid2";
+import {notifyAdmins} from "@/services/notificationService";
 
 // Registration
 export async function POST(req: NextRequest) {
@@ -110,6 +111,13 @@ export async function POST(req: NextRequest) {
 				throw error;
 			}
 		}
+
+		await notifyAdmins({
+			type: "NGO_REGISTERED",
+			title: "New NGO awaiting approval",
+			message: `${validData.name} registered and is waiting for review.`,
+			link: `/admin/ngo-management/${newNgo.id}`,
+		});
 
 		return NextResponse.json({success: true}, {status: 201});
 	} catch (error) {

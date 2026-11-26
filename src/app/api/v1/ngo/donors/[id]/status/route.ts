@@ -3,6 +3,7 @@ import {z} from "zod";
 import {prisma} from "../../../../../../../../prisma/prisma";
 import {getActiveUser} from "@/services/userService";
 import {getErrorMessage} from "@/utils/getErrorMessage";
+import {notifyDonors} from "@/services/notificationService";
 
 const donorStatusSchema = z.object({
 	status: z.enum(["APPROVED", "REJECTED"], {errorMap: () => ({message: "Status must be APPROVED or REJECTED"})}),
@@ -38,6 +39,14 @@ export async function PATCH(req: NextRequest, {params}: RouteParams) {
 			where: {id: donor.id},
 			data: {status: validationResult.data.status},
 			select: {id: true, status: true},
+		});
+
+		const isApproved = updatedDonor.status === "APPROVED";
+		await notifyDonors([updatedDonor.id], {
+			type: isApproved ? "DONOR_APPROVED" : "DONOR_REJECTED",
+			title: isApproved ? "You're now an active donor" : "Donor application not approved",
+			message: isApproved ? "Your NGO approved you. They will contact you when your blood group is needed." : "Your NGO couldn't approve your application. You can apply through another NGO.",
+			link: isApproved ? "/donor/dashboard" : "/donor/awaiting-approval",
 		});
 
 		return NextResponse.json({success: true, donor: updatedDonor}, {status: 200});

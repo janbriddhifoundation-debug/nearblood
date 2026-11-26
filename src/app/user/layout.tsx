@@ -2,7 +2,7 @@
 
 import React, {useState, useEffect} from "react";
 import {Avatar, Layout, Menu, Drawer, Button, Grid} from "antd";
-import {DashboardOutlined, FileTextOutlined, HeartOutlined, LikeOutlined, LogoutOutlined, UploadOutlined, UserOutlined, MenuOutlined} from "@ant-design/icons";
+import {CustomerServiceOutlined, DashboardOutlined, FileTextOutlined, HeartOutlined, LikeOutlined, LogoutOutlined, UploadOutlined, UserOutlined, MenuOutlined} from "@ant-design/icons";
 import {usePathname} from "next/navigation";
 import {signOut, useSession} from "next-auth/react";
 import Show from "@/components/Show";
@@ -73,6 +73,7 @@ const UserLayout = ({children}: {children: React.ReactNode}) => {
 			icon: <LikeOutlined />,
 			label: "Support Initiative",
 		},
+		{key: "/user/support", icon: <CustomerServiceOutlined />, label: "Help & support"},
 		// Same account can also be a donor
 		session?.user?.donorId
 			? {key: "/donor/dashboard", icon: <HeartOutlined />, label: "Donor dashboard"}

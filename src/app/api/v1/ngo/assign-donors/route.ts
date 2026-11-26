@@ -6,6 +6,7 @@ import {assignDonorsSchema} from "@/validationSchema/NgoSchema";
 import {ValidationError} from "yup";
 import * as Sentry from "@sentry/nextjs";
 import {createRequestActivity} from "@/services/requestActivityService";
+import {notifyDonors} from "@/services/notificationService";
 
 // Assign donor to request
 export async function POST(req: NextRequest) {
@@ -55,6 +56,13 @@ export async function POST(req: NextRequest) {
 
 		const {error: activityError, response: activityResponse} = await createRequestActivity({requestId: parsedData.requestId, activity: "DONORS_ASSIGNED"});
 		if (activityError) return activityResponse;
+
+		await notifyDonors(parsedData.donorIds, {
+			type: "DONOR_ASSIGNED",
+			title: "You've been called to donate",
+			message: "Your NGO assigned you to a blood request. They will contact you with the details.",
+			link: "/donor/donations",
+		});
 
 		return NextResponse.json({success: true}, {status: 201});
 	} catch (error) {

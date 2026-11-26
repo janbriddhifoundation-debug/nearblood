@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/../prisma/prisma";
 import { getActiveUser } from "@/services/userService";
+import {notifyOrganisation} from "@/services/notificationService";
 
 export async function PATCH(
   _req: NextRequest,
@@ -35,6 +36,13 @@ export async function PATCH(
   if (approvalResult.count === 0) {
     return NextResponse.json({ message: "Already approved" }, { status: 400 });
   }
+
+  await notifyOrganisation(id, {
+    type: "NGO_APPROVED",
+    title: "Your organisation is approved",
+    message: "You can now see blood requests near you, manage donors and run camps.",
+    link: "/ngo/dashboard",
+  });
 
   return NextResponse.json({ success: true }, { status: 200 });
 }

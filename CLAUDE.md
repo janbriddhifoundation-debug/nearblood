@@ -67,6 +67,9 @@ Patterns to copy (these are the good-quality examples):
 - **Constants** go in `data/`, shared types in `types/` — don't redefine `BLOOD_GROUPS` etc. inline.
 - **Role checks** — new routes use `requireRole(["admin"])` (or `getActiveDonor()` for donor routes). For NGOs, `user.organisationId` is only set once the NGO is approved, so `if (!user.organisationId)` also blocks pending NGOs.
 - **Files** — upload via `/api/v1/upload-file` (add new `type` → folder there), serve via `/api/s3/<folder>/<file>`. Any new folder must be added to `services/fileAccessService.ts` (public / signed-in / restricted) or it 404s.
+- **Notifications** — after an action that someone else should know about, call `notifyUsers` / `notifyOrganisation` / `notifyDonors` / `notifyAdmins` from `services/notificationService.ts` (never throws; donors only receive them if they have a login).
+- **Transactions** — the hosted DB is ~400 ms per round trip. Interactive `prisma.$transaction(async (tx) => ...)` with more than ~3 queries needs a bigger timeout (see `CAMP_TRANSACTION_OPTIONS`).
+- **Shared UI** — `components/StatCard.tsx` for dashboard numbers, `components/Support/SupportCenter.tsx` for tickets.
 - Server-side helpers return discriminated unions `{error: true, response} | {error: false, ...}` (see `userService.ts`).
 
 Avoid (exists in old code, don't repeat): leftover `console.log`s, placeholder dropdown items (`antgroup.com` links in layouts), `!!!` triple negation, big inline `style={{}}` objects when Tailwind classes would do, hard-coded colours that differ from the brand palette, duplicating the "find organisation for this user" query when `getActiveUser().user.organisationId` already has it.
