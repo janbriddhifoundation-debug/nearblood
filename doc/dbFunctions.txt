@@ -1,0 +1,22 @@
+CREATE OR REPLACE FUNCTION public.generate_request_id()
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    new_request_id TEXT;
+BEGIN
+    LOOP
+        new_request_id := 'FBBR-' || 
+                          chr((trunc(random()*26) + 65)::int) ||  -- 1st letter A–Z
+                          chr((trunc(random()*26) + 65)::int) ||  -- 2nd letter A–Z
+                          chr((trunc(random()*26) + 65)::int) ||  -- 3rd letter A–Z
+                          chr((trunc(random()*26) + 65)::int) ||  -- 4th letter A–Z
+                          lpad(trunc(random()*10000)::TEXT, 4, '0');  -- 0000 to 9999
+                          
+        EXIT WHEN NOT EXISTS (
+            SELECT 1 FROM public."Request" r WHERE r.id = new_request_id
+        );
+    END LOOP;
+    RETURN new_request_id;
+END;
+$function$

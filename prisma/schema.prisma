@@ -1,0 +1,227 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum NgoEventStatus {
+  ACTIVE
+  ONGOING
+  CLOSED
+}
+
+model User {
+  id           String         @id @default(cuid())
+  name         String?
+  email        String         @unique
+  image        String?
+  role         String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  status       String?        @default("active")
+  Organisation Organisation[]
+  requests     Request[]
+  Upload       Upload[]
+}
+
+model Request {
+  id              String                    @id @default(dbgenerated("generate_request_id()"))
+  patientName     String?
+  age             Int?
+  gender          String?
+  patientAddress  String?
+  relWRequester   String?
+  hospitalRegNo   String?
+  bloodGroup      String?
+  urgency         String?
+  reason          String?
+  hospital        String?
+  locationName    String?
+  requirementDate DateTime?
+  contact         String?
+  notes           String?
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  userId          String
+  latitude        Float?
+  longitude       Float?
+  units           Int?
+  location        Unsupported("geography")?
+  feedback        String?
+  DonationProof   DonationProof[]
+  user            User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  RequestActivity RequestActivity[]
+  RequestDonors   RequestDonors[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model spatial_ref_sys {
+  srid      Int     @id
+  auth_name String? @db.VarChar(256)
+  auth_srid Int?
+  srtext    String? @db.VarChar(2048)
+  proj4text String? @db.VarChar(2048)
+}
+
+model RequestActivity {
+  id        String   @unique(map: "RequestActivity_pkey") @default(cuid())
+  requestId String
+  activity  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Request   Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, createdAt(sort: Desc)])
+}
+
+model DonationProof {
+  id        String   @unique(map: "DonationProof_pkey") @default(cuid())
+  requestId String
+  filekey   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Request   Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+}
+
+model Upload {
+  id        String    @id @default(cuid())
+  userId    String?
+  filekey   String?   @unique
+  createdAt DateTime? @default(now())
+  type      String?
+  updatedAt DateTime?
+  User      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Organisation {
+  id                  String                @id @default(cuid())
+  name                String?
+  type                String?
+  regNo               String?               @unique(map: "unique_regno")
+  estDate             DateTime?             @db.Date
+  address             String?
+  website             String?
+  regCertFilename     String?
+  createdAt           DateTime?             @default(now())
+  updatedAt           DateTime?             @updatedAt
+  userId              String
+  approvedAt          DateTime?
+  Donor               Donor[]
+  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  OrganisationContact OrganisationContact[]
+  OrganisationRegion  OrganisationRegion[]
+  RequestDonors       RequestDonors[]
+  NgoEvents NgoEvent[]
+}
+
+model OrganisationRegion {
+  id             String                    @unique(map: "OrganisationRegion_pkey") @default(cuid())
+  createdAt      DateTime?                 @default(now())
+  updatedAt      DateTime?                 @updatedAt
+  organisationId String
+  locationName   String?
+  latitude       Float?
+  longitude      Float?
+  location       Unsupported("geography")?
+  organisation   Organisation              @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+}
+
+model OrganisationContact {
+  id             String       @id @default(cuid())
+  name           String?
+  designation    String?
+  email          String?      @unique(map: "unique_email")
+  phone          String?      @unique(map: "unique_phone")
+  govtIdFilename String?
+  createdAt      DateTime?    @default(now())
+  updatedAt      DateTime?
+  organisationId String
+  Organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+}
+
+model Donor {
+  id             String          @id @default(cuid())
+  organisationId String?
+  name           String?
+  gender         String?
+  email          String?         @unique(map: "donor_unique_email")
+  phone          String?         @unique(map: "donor_unique_phone")
+  dob            DateTime?       @db.Date
+  bloodGroup     String?
+  address        String?
+  photo          String?
+  Organisation   Organisation?   @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  RequestDonors  RequestDonors[]
+}
+
+model RequestDonors {
+  id             String        @id @default(cuid())
+  requestId      String?
+  donorId        String?
+  createdAt      DateTime?
+  updatedAt      DateTime?
+  organisationId String?
+
+  Donor          Donor?        @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  Organisation   Organisation? @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  Request        Request?      @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  DonationCertificate DonationCertificate?
+
+  @@unique([requestId, donorId], map: "requestdonors_requestid_donorid_unique")
+}
+
+model DonationCertificate {
+  id                String   @id @default(cuid())
+  certificateNumber String   @unique
+  requestDonorId    String   @unique
+  generatedAt       DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  RequestDonor      RequestDonors @relation(fields: [requestDonorId], references: [id], onDelete: Cascade)
+}
+
+model NgoEvent {
+  id                String            @id @default(cuid())
+
+  organisationId    String
+
+  eventName         String
+  purpose           String?
+
+  eventDate         DateTime          @db.Date
+
+  venueName         String?
+
+  latitude          Float?
+  longitude         Float?
+  location          Unsupported("geography")?
+
+  partnerBloodBank  String?
+
+  donorsRequired    Int?
+
+  registeredDonors  Int               @default(0)
+  actualDonors      Int               @default(0)
+  unitsCollected    Int               @default(0)
+
+  imageFilekey      String?
+
+  status            NgoEventStatus    @default(ACTIVE)
+
+  notes             String?
+
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  Organisation      Organisation      @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@index([organisationId])
+  @@index([eventDate])
+  @@index([status])
+  @@index([status, eventDate])
+}
