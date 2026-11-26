@@ -25,6 +25,7 @@ model User {
   Organisation Organisation[]
   requests     Request[]
   Upload       Upload[]
+  Donor        Donor?
 }
 
 model Request {
@@ -142,19 +143,44 @@ model OrganisationContact {
   Organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 }
 
+enum DonorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum DonorSource {
+  NGO
+  SELF
+}
+
 model Donor {
-  id             String          @id @default(cuid())
+  id             String                    @id @default(cuid())
   organisationId String?
+  userId         String?                   @unique
   name           String?
   gender         String?
-  email          String?         @unique(map: "donor_unique_email")
-  phone          String?         @unique(map: "donor_unique_phone")
-  dob            DateTime?       @db.Date
+  email          String?                   @unique(map: "donor_unique_email")
+  phone          String?                   @unique(map: "donor_unique_phone")
+  dob            DateTime?                 @db.Date
   bloodGroup     String?
   address        String?
   photo          String?
-  Organisation   Organisation?   @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  status         DonorStatus               @default(APPROVED)
+  source         DonorSource               @default(NGO)
+  locationName   String?
+  latitude       Float?
+  longitude      Float?
+  location       Unsupported("geography")?
+  isAvailable    Boolean                   @default(true)
+  lastDonatedAt  DateTime?
+  createdAt      DateTime?                 @default(now())
+  updatedAt      DateTime?                 @updatedAt
+  Organisation   Organisation?             @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  User           User?                     @relation(fields: [userId], references: [id], onDelete: SetNull)
   RequestDonors  RequestDonors[]
+
+  @@index([organisationId, status])
 }
 
 model RequestDonors {

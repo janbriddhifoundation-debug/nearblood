@@ -31,7 +31,6 @@ const UserRequestDetailsView = ({id}: {id: string}) => {
 		} finally {
 			setLoading(false);
 		}
-		console.log("Fetching data for request ID:", id);
 	}, [id]);
 
 	useEffect(() => {

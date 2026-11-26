@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, context: Params) {
       return response;
     }
 
-    if (!user) {
+    if (!user || user.role !== "admin") {
       return NextResponse.json(
         {
           error: "Unauthorized request",

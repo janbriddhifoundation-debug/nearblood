@@ -53,8 +53,6 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
           donorBloodGroup: certificate.RequestDonor?.Donor?.bloodGroup ?? "",
 
-          patientName: certificate.RequestDonor?.Request?.patientName ?? "",
-
           hospital: certificate.RequestDonor?.Request?.hospital ?? "",
 
           bloodGroup: certificate.RequestDonor?.Request?.bloodGroup ?? "",

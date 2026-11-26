@@ -1,11 +1,12 @@
 "use client";
 
 import React, {useState, useEffect} from "react";
-import {Avatar, Badge, Dropdown, Layout, Menu, Drawer, Button, Grid, MenuProps} from "antd";
-import {BellOutlined, DashboardOutlined, FileTextOutlined, LikeOutlined, LogoutOutlined, UploadOutlined, UserOutlined, MenuOutlined} from "@ant-design/icons";
+import {Avatar, Layout, Menu, Drawer, Button, Grid} from "antd";
+import {DashboardOutlined, FileTextOutlined, HeartOutlined, LikeOutlined, LogoutOutlined, UploadOutlined, UserOutlined, MenuOutlined} from "@ant-design/icons";
 import {usePathname} from "next/navigation";
 import {signOut, useSession} from "next-auth/react";
 import Show from "@/components/Show";
+import NotificationBell from "@/components/NotificationBell";
 import {useRouter} from "next-nprogress-bar";
 
 const {Sider, Content, Header} = Layout;
@@ -72,35 +73,13 @@ const UserLayout = ({children}: {children: React.ReactNode}) => {
 			icon: <LikeOutlined />,
 			label: "Support Initiative",
 		},
+		// Same account can also be a donor
+		session?.user?.donorId
+			? {key: "/donor/dashboard", icon: <HeartOutlined />, label: "Donor dashboard"}
+			: {key: "/donor/registration", icon: <HeartOutlined />, label: "Become a donor"},
 		{key: "/logout", icon: <LogoutOutlined />, label: "Logout"},
 	];
 
-	const items: MenuProps["items"] = [
-		{
-			key: "1",
-			label: (
-				<a target="_blank" rel="noopener noreferrer" href="https://www.antgroup.com">
-					1st menu item
-				</a>
-			),
-		},
-		{
-			key: "2",
-			label: (
-				<a target="_blank" rel="noopener noreferrer" href="https://www.aliyun.com">
-					2nd menu item
-				</a>
-			),
-		},
-		{
-			key: "3",
-			label: (
-				<a target="_blank" rel="noopener noreferrer" href="https://www.luohanacademy.com">
-					3rd menu item
-				</a>
-			),
-		},
-	];
 
 	const handleMenuClick = ({key}: {key: string}) => {
 		if (key === "/logout") {
@@ -143,16 +122,7 @@ const UserLayout = ({children}: {children: React.ReactNode}) => {
 					</div>
 
 					<div style={{display: "flex", alignItems: "center", gap: 24}}>
-						<Dropdown
-							menu={{
-								items,
-							}}
-							trigger={["click"]}
-							placement="bottomRight">
-							<Badge count={4} offset={[-28, -2]}>
-								<BellOutlined style={{fontSize: 20, cursor: "pointer"}} />
-							</Badge>
-						</Dropdown>
+						<NotificationBell />
 
 						<div style={styles.userInfo}>
 							<span style={{fontWeight: 500}}>{user.name}</span>

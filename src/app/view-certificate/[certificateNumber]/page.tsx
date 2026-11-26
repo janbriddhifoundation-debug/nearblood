@@ -13,7 +13,6 @@ type CertificateData = {
   generatedAt: string;
   donorName: string;
   donorBloodGroup: string;
-  patientName: string;
   hospital: string;
   bloodGroup: string;
   organisationName: string;
@@ -119,11 +118,6 @@ const Page = () => {
             <div>
               <div className="text-gray-500 text-sm">Donor Blood Group</div>
               <div className="font-semibold">{certificate.donorBloodGroup}</div>
-            </div>
-
-            <div>
-              <div className="text-gray-500 text-sm">Patient Name</div>
-              <div className="font-semibold">{certificate.patientName}</div>
             </div>
 
             <div>

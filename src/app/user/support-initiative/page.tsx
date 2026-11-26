@@ -5,18 +5,15 @@ import {UploadOutlined} from "@ant-design/icons";
 import type {UploadProps} from "antd";
 import React from "react";
 
+// Payment screenshots go to our own storage (support-payments/, visible to the uploader and admins only)
 const props: UploadProps = {
 	name: "file",
-	action: "https://660d2bd96ddfa2943b33731c.mockapi.io/api/upload",
-	headers: {
-		authorization: "authorization-text",
-	},
+	action: "/api/v1/upload-file",
+	data: {type: "TEMP_SUPPORT_PAYMENT"},
+	accept: ".jpg,.jpeg,.png,.webp",
 	onChange(info) {
-		if (info.file.status !== "uploading") {
-			console.log(info.file, info.fileList);
-		}
 		if (info.file.status === "done") {
-			message.success(`${info.file.name} file uploaded successfully`);
+			message.success(`${info.file.name} uploaded. Thank you for your support!`);
 		} else if (info.file.status === "error") {
 			message.error(`${info.file.name} file upload failed.`);
 		}
@@ -32,7 +29,7 @@ const SupportInitiativePage = () => {
 						<Image src={"/upi.jpg"} alt="" style={{width: "100%"}} />
 					</div>
 					<div style={{flex: 1}}>
-						<h1>Support the Floating Blood Bank - Be a Lifesaver!</h1>
+						<h1>Support NearBlood - Be a Lifesaver!</h1>
 						<div>{"Help us improve our technology, outreach, and support services."}</div>
 						<div>{"Donate Today & Be Someone's Hero!"}</div>
 						<div style={{marginTop: 20, marginBottom: 20}}>Scan the QR code and after payment please upload the screenshot</div>

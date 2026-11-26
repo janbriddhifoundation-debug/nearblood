@@ -119,7 +119,7 @@ export async function GET(req: Request) {
 
 		return NextResponse.json({success: true, requests: transformedData}, {status: 200});
 	} catch (error) {
-		console.log(error);
+		console.error(error);
 		// Sentry.captureException(error);
 		const errorMessage = getErrorMessage(error);
 		return NextResponse.json({error: errorMessage}, {status: 500});

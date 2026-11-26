@@ -18,7 +18,7 @@ export async function GET() {
 
     if (error) return response;
 
-    if (!user) {
+    if (!user || user.role !== "admin") {
       return NextResponse.json(
         {
           error: "Unauthorized request",

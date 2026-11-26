@@ -36,6 +36,15 @@ export async function POST(req: NextRequest) {
 			throw error;
 		}
 
+		// Only this NGO's approved donors can be assigned
+		const assignableCount = await prisma.donor.count({
+			where: {id: {in: parsedData.donorIds}, organisationId: user.organisationId, status: "APPROVED"},
+		});
+
+		if (assignableCount !== parsedData.donorIds.length) {
+			return NextResponse.json({error: "Some selected donors are not approved donors of your organisation"}, {status: 400});
+		}
+
 		await prisma.requestDonors.createMany({
 			data: parsedData.donorIds.map((donorId: string) => ({
 				donorId,
@@ -49,7 +58,7 @@ export async function POST(req: NextRequest) {
 
 		return NextResponse.json({success: true}, {status: 201});
 	} catch (error) {
-		console.log(error);
+		console.error(error);
 		Sentry.captureException(error);
 		const errorMessage = getErrorMessage(error);
 		return NextResponse.json({error: errorMessage}, {status: 500});

@@ -4,14 +4,15 @@ import {Button, message} from "antd";
 import {
 	// FacebookOutlined,
 	HeartOutlined,
+	UserAddOutlined,
 	// LinkedinOutlined, SafetyCertificateOutlined, TwitterOutlined, UsergroupAddOutlined
 } from "@ant-design/icons";
 import AuthButtons from "@/components/AuthButtons";
 import Image from "next/image";
-import {useRouter} from "next/navigation";
+import {useJoinAs} from "@/hooks/useJoinAs";
 
 export default function Home() {
-	const router = useRouter();
+	const joinAs = useJoinAs();
 	return (
 		<>
 			<div className="bg-background-light dark:bg-background-dark font-display text-gray-800 dark:text-gray-200">
@@ -60,7 +61,10 @@ export default function Home() {
 										<Button onClick={() => message.info("This feature is not active yet")} icon={<HeartOutlined />} type="primary" className="!h-[44px] !font-semibold !px-6">
 											Request Blood
 										</Button>
-										<Button onClick={() => router.push("/ngo/dashboard")} type="default" className="!h-[44px] !font-semibold !px-6 !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">
+										<Button onClick={() => joinAs("donor")} icon={<UserAddOutlined />} type="default" className="!h-[44px] !font-semibold !px-6 !bg-white !border-white !text-red-600 hover:!bg-gray-100">
+											Become a Donor
+										</Button>
+										<Button onClick={() => joinAs("ngo")} type="default" className="!h-[44px] !font-semibold !px-6 !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">
 											Register NGO
 										</Button>
 									</div>

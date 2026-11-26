@@ -109,10 +109,9 @@ const UserUploadProofView = () => {
 		}
 		try {
 			setIsSubmitting(true);
-			const res = await axios.post("/api/v1/user/requests/submit-proof", {
+			await axios.post("/api/v1/user/requests/submit-proof", {
 				...formData,
 			});
-			console.log(res.data);
 			message.success("Proof submitted successfully.");
 			setFormData({
 				requestId: undefined,

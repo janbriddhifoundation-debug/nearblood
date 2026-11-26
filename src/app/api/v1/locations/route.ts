@@ -7,6 +7,13 @@ interface LocationIQItem {
 	display_name: string;
 	lat: number;
 	lon: number;
+	address?: {name?: string; city?: string; town?: string; village?: string; county?: string; state_district?: string; state?: string};
+}
+
+// Best "city" for matching NGOs by place name
+function getCity(item: LocationIQItem): string | null {
+	const address = item.address;
+	return address?.city || address?.town || address?.village || address?.county || address?.state_district || null;
 }
 
 export async function GET(request: NextRequest) {
@@ -36,7 +43,6 @@ export async function GET(request: NextRequest) {
 		}
 		const seen = new Set<string>();
 
-		console.log(data[0]);
 
 		const formatted = data
 			.filter((item: LocationIQItem) => {
@@ -50,6 +56,7 @@ export async function GET(request: NextRequest) {
 				value: item.display_name,
 				lat: item.lat,
 				lon: item.lon,
+				city: getCity(item),
 			}));
 
 		return NextResponse.json({success: true, locations: formatted}, {status: 200});

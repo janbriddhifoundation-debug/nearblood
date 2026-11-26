@@ -8,18 +8,25 @@ import Link from "next/link";
 import Show from "./Show";
 import RoleSelectModal from "./RoleSelectModal";
 import Image from "next/image";
+import {getDashboardPath, TRole} from "@/utils/roleRoutes";
 
 const AuthButtons = () => {
 	const {status, data: session} = useSession();
 	const [showRoleModal, setShowRoleModal] = useState(false);
+	const [intentRole, setIntentRole] = useState<TRole | undefined>(undefined);
 
-	const handleRoleUpdated = () => {
-		// Refresh the page to update the user data
-		window.location.reload();
+	// Full reload so the session picks up the new role, then middleware routes to the right onboarding step
+	const handleRoleUpdated = (role: TRole) => {
+		window.location.href = getDashboardPath(role);
 	};
 
 	useEffect(() => {
 		if (!session?.user?.role && status === "authenticated") {
+			// Home page CTAs sign in with ?intent=<role> so the right role is preselected
+			const intent = new URLSearchParams(window.location.search).get("intent");
+			if (intent === "donor" || intent === "user" || intent === "ngo") {
+				setIntentRole(intent);
+			}
 			setShowRoleModal(true);
 		}
 	}, [session?.user?.role, status]);
@@ -39,28 +46,24 @@ const AuthButtons = () => {
 			</Show>
 
 			<Show IF={!!session && status === "authenticated"}>
-				<>
-					<div className="flex gap-4 items-center">
-						<div>
-							<Show IF={!!session?.user?.image}>
-								<Image src={session?.user?.image ?? ""} alt="User Avatar" width={36} height={36} className="rounded-full" />
-							</Show>
-						</div>
+				<div className="flex gap-4 items-center">
+					<Show IF={!!session?.user?.image}>
+						<Image src={session?.user?.image ?? ""} alt="User Avatar" width={36} height={36} className="rounded-full" />
+					</Show>
 
-						<div className="space-x-4">
-							<Link href={session?.user?.role && session?.user?.role === "ngo" ? "/ngo/dashboard" : "/user/dashboard"}>
-								<Button disabled={!session?.user?.role} type="primary" icon={<DashboardOutlined />}>
-									Dashboard
-								</Button>
-							</Link>
-							<Button icon={<LogoutOutlined />} onClick={() => signOut()}>
-								Logout
+					<div className="space-x-4">
+						<Link href={getDashboardPath(session?.user?.role)}>
+							<Button disabled={!session?.user?.role} type="primary" icon={<DashboardOutlined />}>
+								Dashboard
 							</Button>
-						</div>
+						</Link>
+						<Button icon={<LogoutOutlined />} onClick={() => signOut()}>
+							Logout
+						</Button>
 					</div>
-				</>
+				</div>
 
-				<RoleSelectModal isOpen={showRoleModal} userName={session?.user?.name} userImage={session?.user?.image} userEmail={session?.user?.email} onRoleUpdated={handleRoleUpdated} />
+				<RoleSelectModal isOpen={showRoleModal} defaultRole={intentRole} onRoleUpdated={handleRoleUpdated} />
 			</Show>
 		</>
 	);

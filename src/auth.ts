@@ -30,13 +30,16 @@ export const {handlers, signIn, signOut, auth} = NextAuth({
 					const baseUrl = process.env.NEXTAUTH_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3002");
 					try {
 						const fetchUrl = `${baseUrl.replace(/\/$/, "")}/api/auth/get-user?email=${encodeURIComponent(token.email)}`;
-						const response = await fetch(fetchUrl);
+						// get-user is server-to-server only; it checks this header
+						const response = await fetch(fetchUrl, {headers: {"x-internal-secret": process.env.AUTH_SECRET ?? ""}, cache: "no-store"});
 						if (response.ok) {
 							const userData = await response.json();
 							if (userData.user) {
 								session.user.role = userData.user.role;
 								session.user.organisationId = userData.user.organisationId;
 								session.user.isApprovedNgo = userData.user.isApprovedNgo;
+								session.user.donorId = userData.user.donorId;
+								session.user.donorStatus = userData.user.donorStatus;
 							}
 						} else {
 							console.error(`Failed to fetch user role from ${fetchUrl} - status: ${response.status} ${response.statusText}`);

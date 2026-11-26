@@ -14,6 +14,7 @@ const VALID_TYPES = [
   "TEMP_NGO_CONTACT_ID_PROOF",
   "TEMP_DONOR_PHOTO",
   "TEMP_NGO_EVENT_IMAGE",
+  "TEMP_SUPPORT_PAYMENT",
 ];
 
 export async function POST(req: NextRequest) {
@@ -64,6 +65,8 @@ export async function POST(req: NextRequest) {
       folder = "donors";
     } else if (type === "TEMP_NGO_EVENT_IMAGE") {
       folder = "ngo-events";
+    } else if (type === "TEMP_SUPPORT_PAYMENT") {
+      folder = "support-payments";
     }
 
     await s3.send(

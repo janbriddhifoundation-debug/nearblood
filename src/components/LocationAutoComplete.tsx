@@ -7,12 +7,14 @@ interface LocationOption {
 	value: string;
 	lat?: string;
 	lon?: string;
+	city?: string | null;
 }
 
 interface LocationData {
 	location: string;
 	lat: string;
 	lon: string;
+	city?: string | null;
 }
 
 interface Props {
@@ -57,6 +59,7 @@ const LocationAutoComplete: React.FC<Props> = ({multiple = false, onSelectLocati
 					location: selected.label as string,
 					lat: selected.lat!,
 					lon: selected.lon!,
+					city: selected.city ?? null,
 				});
 			}
 		});

@@ -15,7 +15,6 @@ const Page = () => {
 		try {
 			setLoading(true);
 			const res = await axios.get(`/api/v1/ngo/dashboard`);
-			console.log("Dashboard data:", res.data);
 			setData(res.data);
 		} catch (error) {
 			// Sentry.captureException(error);

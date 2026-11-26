@@ -1,6 +1,8 @@
 # NearBlood — project guide
 
-NearBlood connects blood requesters, donors and NGOs (India-focused: Indian phone regex, INR/UPI). Three roles — `user`, `ngo`, `admin` — each with its own dashboard area. Development stage: NGO onboarding is live; public blood requests are not yet active.
+NearBlood connects blood requesters, donors and NGOs (India-focused: Indian phone regex, INR/UPI). Four roles, each with its own dashboard area: `admin` (set in DB only), `ngo`, `user` (blood requester), `donor`. Development stage: NGO onboarding is live; public blood requests are not yet active.
+
+**Roles vs capabilities:** `User.role` is one value and only decides the default dashboard (`utils/roleRoutes.ts → getDashboardPath`). `user` and `donor` are both *personal* accounts (`isPersonalRole`): they can always use `/user/*` (request blood) and can use `/donor/*` once a `Donor` row is linked via `Donor.userId`. So one person can be requester and donor. Session carries `donorId` + `donorStatus` (PENDING → NGO approves → APPROVED; REJECTED can re-apply). Donors added by an NGO have no `userId` until the person signs up with the same email and "links" (claims) the record.
 
 ## Stack
 
@@ -20,13 +22,14 @@ NearBlood connects blood requesters, donors and NGOs (India-focused: Indian phon
 app/
   page.tsx                  public home page (currently a placeholder — being rebuilt)
   layout.tsx                root: AntdRegistry > ConfigProvider(colorPrimary #ff0000) > SessionProvider > Providers > antd App
-  user/ ngo/ admin/         role areas, each with a client layout.tsx (Sider + Header + Content)
+  user/ ngo/ admin/ donor/  role areas, each with a client layout.tsx (Sider + Header + Content); onboarding pages render without the chrome
   view-certificate/[n]/     public certificate verification
   api/auth/...              NextAuth + get-user/upsert-user
   api/v1/{user,ngo,admin,public}/...   REST route handlers
 components/   reusable client components (PascalCase, one per file, default export)
 views/        large page bodies pulled out of page.tsx (UserRequestView, ...)
-services/     server-side helpers returning {error, response, ...} (userService.getActiveUser)
+services/     server-side helpers returning {error, response, ...} (userService.getActiveUser, donorService.getActiveDonor)
+hooks/        client hooks (useJoinAs — role-aware "Become a donor" / "Register NGO" CTAs)
 utils/        pure helpers (getErrorMessage, showValidationErrors, bigintUtils, s3Client)
 types/        shared interfaces, `I` prefix (IBloodRequest, IDonor) + next-auth augmentation
 data/         constants (BLOOD_GROUPS, NGO_TYPES)
@@ -56,11 +59,14 @@ Patterns to copy (these are the good-quality examples):
   - Type `where` objects with `Prisma.XxxWhereInput`; validate enum query params against the Prisma enum.
   - Raw SQL returning counts → run through `convertBigIntToNumber`.
   - Import Prisma as `import {prisma} from "../../../prisma/prisma"` (relative — the `@/` alias only covers `src/`).
+- **Forms** — formik; when the API validates with zod, validate the form with the same schema via `zodFormikValidate(schema)` (see `views/DonorRegistrationView.tsx`).
 - **Client data fetching** — `useState` for `loading`/data, `useCallback` fetch fn + `useEffect`, `try { setLoading(true) ... } catch (e) { message.error(getErrorMessage(e)) } finally { setLoading(false) }`. Use `showValidationErrors(e)` after form submits.
 - **Tables** — a separate `components/XxxTable.tsx` with an exported `XxxRecord` interface, typed props (`data, loading, page, pageSize, total, onTableChange, ...`), `ColumnsType<XxxRecord>`, server-side pagination (see `NgoEventsTable.tsx`).
 - **Conditional rendering** — `<Show IF={cond}>...</Show>` from `components/Show.tsx` is the house idiom.
 - **Navigation** — inside dashboards use `useRouter` from `next-nprogress-bar` (shows the progress bar).
 - **Constants** go in `data/`, shared types in `types/` — don't redefine `BLOOD_GROUPS` etc. inline.
+- **Role checks** — new routes use `requireRole(["admin"])` (or `getActiveDonor()` for donor routes). For NGOs, `user.organisationId` is only set once the NGO is approved, so `if (!user.organisationId)` also blocks pending NGOs.
+- **Files** — upload via `/api/v1/upload-file` (add new `type` → folder there), serve via `/api/s3/<folder>/<file>`. Any new folder must be added to `services/fileAccessService.ts` (public / signed-in / restricted) or it 404s.
 - Server-side helpers return discriminated unions `{error: true, response} | {error: false, ...}` (see `userService.ts`).
 
 Avoid (exists in old code, don't repeat): leftover `console.log`s, placeholder dropdown items (`antgroup.com` links in layouts), `!!!` triple negation, big inline `style={{}}` objects when Tailwind classes would do, hard-coded colours that differ from the brand palette, duplicating the "find organisation for this user" query when `getActiveUser().user.organisationId` already has it.
@@ -93,5 +99,6 @@ Avoid (exists in old code, don't repeat): leftover `console.log`s, placeholder d
 
 - Env vars: see `env.example`. Real values are kept outside the repo — never commit or print them.
 - Run `npm run lint` and `npx tsc --noEmit` after changes. There is no test suite.
-- After schema changes: `npx prisma migrate dev --name <name>` then `npx prisma generate`. Ask before running migrations against a shared DB.
+- **Schema changes — careful:** `prisma/migrations` is stale (only the original User/Request tables; the rest of the DB was built with `db push`/manual SQL). **Never run `prisma migrate dev` or `migrate reset`** — it would try to reset the database. Until a baseline migration exists, write the change in `schema.prisma`, show the SQL (`npx prisma migrate diff`), and get the user's OK before applying it. Then `npx prisma generate`.
+- Roadmap and planned designs (donor role etc.) live in `doc/ROADMAP.md`.
 - Git default branch is `main`. After `npm ci`, run `npx prisma generate` before type-checking (the generated client isn't committed).

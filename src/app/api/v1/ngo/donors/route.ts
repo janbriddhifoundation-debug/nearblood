@@ -5,7 +5,8 @@ import {getErrorMessage} from "@/utils/getErrorMessage";
 import {donorRegSchema} from "@/validationSchema/NgoSchema";
 import {ValidationError} from "yup";
 import * as Sentry from "@sentry/nextjs";
-import {Prisma} from "@prisma/client";
+import {DonorStatus, Prisma} from "@prisma/client";
+import {getDonorPhotoUrl} from "@/services/donorService";
 
 // Get all donors of the ngo
 export async function GET(req: NextRequest) {
@@ -17,15 +18,20 @@ export async function GET(req: NextRequest) {
 			return NextResponse.json({error: "Unauthorized request"}, {status: 403});
 		}
 
-		// Get query params
+		// Get query params. bloodGroups may come as repeated params or one comma-separated value.
 		const {searchParams} = new URL(req.url);
-		const bloodGroups = searchParams.getAll("bloodGroups");
+		const bloodGroups = searchParams
+			.getAll("bloodGroups")
+			.flatMap((value) => value.split(","))
+			.filter(Boolean);
 		const searchTerm = searchParams.get("searchTerm") || "";
-
-		console.log({bloodGroups, searchTerm});
+		// Only approved donors unless a status is asked for, so pending sign-ups can't be assigned to requests
+		const statusParam = searchParams.get("status");
+		const status = statusParam && Object.values(DonorStatus).includes(statusParam as DonorStatus) ? (statusParam as DonorStatus) : DonorStatus.APPROVED;
 
 		const where: Prisma.DonorWhereInput = {
 			organisationId: user.organisationId,
+			status,
 		};
 
 		if (bloodGroups.length > 0) {
@@ -36,14 +42,22 @@ export async function GET(req: NextRequest) {
 			where.name = {contains: searchTerm, mode: "insensitive"};
 		}
 
-		const donors = await prisma.donor.findMany({where});
+		const [donors, statusCounts] = await Promise.all([
+			prisma.donor.findMany({where, orderBy: {createdAt: "desc"}}),
+			prisma.donor.groupBy({by: ["status"], where: {organisationId: user.organisationId}, _count: {_all: true}}),
+		]);
+
+		const counts = Object.values(DonorStatus).reduce<Record<string, number>>((acc, value) => {
+			acc[value] = statusCounts.find((item) => item.status === value)?._count._all ?? 0;
+			return acc;
+		}, {});
 
 		const transformedData = donors.map((donor) => ({
 			...donor,
-			photo: donor.photo ? `${process.env.NEXT_PUBLIC_APP_URL}/api/s3/donors/${donor.photo}` : null,
+			photo: getDonorPhotoUrl(donor.photo),
 		}));
 
-		return NextResponse.json({success: true, donors: transformedData}, {status: 200});
+		return NextResponse.json({success: true, donors: transformedData, counts}, {status: 200});
 	} catch (error) {
 		Sentry.captureException(error);
 		const errorMessage = getErrorMessage(error);
@@ -86,7 +100,7 @@ export async function POST(req: NextRequest) {
 
 		return NextResponse.json({success: true, request: newDonor}, {status: 201});
 	} catch (error) {
-		console.log(error);
+		console.error(error);
 		const errorMessage = getErrorMessage(error);
 		return NextResponse.json({error: errorMessage}, {status: 500});
 	}

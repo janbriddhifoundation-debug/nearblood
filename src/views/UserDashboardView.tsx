@@ -19,9 +19,8 @@ const UserDashboardView = () => {
 			setLoading(true);
 			const {data} = await axios.get(`/api/v1/user/requests`);
 			setRequests(data.requests);
-			console.log(data.requests);
 		} catch (error) {
-			console.log("Error fetching requests:", error);
+			console.error("Error fetching requests:", error);
 			message.error("Failed to fetch requests. Please try again later.");
 		} finally {
 			setLoading(false);

@@ -14,7 +14,7 @@ const Page: React.FC = () => {
 				<div className="flex items-center justify-between mb-6 relative">
 					<div>
 						<h1 className="text-2xl md:text-3xl font-extrabold text-rose-700 tracking-tight">Account Awaiting Approval</h1>
-						<p className="mt-1 text-sm md:text-base text-slate-600 max-w-2xl">Thank you for registering your organisation with Blood Donation. Your account is currently under review — this helps us keep the platform secure and trustworthy.</p>
+						<p className="mt-1 text-sm md:text-base text-slate-600 max-w-2xl">Thank you for registering your organisation with NearBlood. Your account is currently under review — this helps us keep the platform secure and trustworthy.</p>
 					</div>
 					<div className="absolute right-0 top-3">
 						<span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-sm font-medium">Under review</span>

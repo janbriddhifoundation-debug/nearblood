@@ -89,7 +89,7 @@ const Page: React.FC = () => {
 		<div style={{padding: 32, maxWidth: 1320, margin: "0 auto"}}>
 			<div className="px-8 py-6 bg-white rounded-lg shadow">
 				<h2 className="text-2xl font-bold">Add a new Donor</h2>
-				<p>Register new donors with Floating Blood Bank and strengthen your impact.</p>
+				<p>Register new donors with NearBlood and strengthen your impact.</p>
 
 				<form onSubmit={formik.handleSubmit} className="space-y-6">
 					<div className="text-xl mt-8">Contact Information</div>

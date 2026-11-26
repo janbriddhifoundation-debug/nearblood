@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../../../prisma/prisma";
 import { Prisma } from "@prisma/client";
+import {requireRole} from "@/services/userService";
 
+// Admin only: all NGOs with owner email and approval status (NGO management page)
 export async function GET(request: Request) {
 	try {
+		const {error, response} = await requireRole(["admin"]);
+		if (error) return response;
+
 		const {searchParams} = new URL(request.url);
 
     const page = Number(searchParams.get("page")) || 1;

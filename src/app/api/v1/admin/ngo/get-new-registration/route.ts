@@ -7,8 +7,8 @@ export async function GET() {
 		const {error, response, user} = await getActiveUser();
 		if (error) return response;
 
-		if (!user) {
-			return NextResponse.json({error: "User not found"}, {status: 404});
+		if (!user || user.role !== "admin") {
+			return NextResponse.json({error: "Unauthorized request"}, {status: 403});
 		}
 
 		return NextResponse.json({success: true}, {status: 200});

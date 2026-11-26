@@ -5,8 +5,9 @@ import {usePathname} from "next/navigation";
 import {useSession, signOut} from "next-auth/react";
 import axios from "axios";
 import {useUserStore} from "@/stores/useUserStore";
-import {Avatar, Badge, Dropdown, Layout, Menu, MenuProps, Spin} from "antd";
-import {BellOutlined, DashboardOutlined, FileTextOutlined, LogoutOutlined, UsergroupAddOutlined, UserOutlined, SafetyCertificateOutlined, CalendarOutlined, BarChartOutlined, FundOutlined, MessageOutlined, SettingOutlined, CustomerServiceOutlined, AuditOutlined} from "@ant-design/icons";
+import NotificationBell from "@/components/NotificationBell";
+import {Avatar, Layout, Menu, Spin} from "antd";
+import {DashboardOutlined, FileTextOutlined, LogoutOutlined, UsergroupAddOutlined, UserOutlined, SafetyCertificateOutlined, CalendarOutlined, BarChartOutlined, FundOutlined, MessageOutlined, SettingOutlined, CustomerServiceOutlined, AuditOutlined} from "@ant-design/icons";
 import {useRouter} from "next-nprogress-bar";
 
 const {Sider, Content, Header} = Layout;
@@ -113,32 +114,6 @@ export default function NgoLayout({children}: {children: React.ReactNode}) {
 		},
 	];
 
-	const items: MenuProps["items"] = [
-		{
-			key: "1",
-			label: (
-				<a target="_blank" rel="noopener noreferrer" href="https://www.antgroup.com">
-					1st menu item
-				</a>
-			),
-		},
-		{
-			key: "2",
-			label: (
-				<a target="_blank" rel="noopener noreferrer" href="https://www.aliyun.com">
-					2nd menu item
-				</a>
-			),
-		},
-		{
-			key: "3",
-			label: (
-				<a target="_blank" rel="noopener noreferrer" href="https://www.luohanacademy.com">
-					3rd menu item
-				</a>
-			),
-		},
-	];
 
 	const handleMenuClick = ({key}: {key: string}) => {
 		if (key === "/logout") {
@@ -191,11 +166,7 @@ export default function NgoLayout({children}: {children: React.ReactNode}) {
 			<Layout>
 				<Header style={styles.header}>
 					<div>
-						<Dropdown menu={{items}} trigger={["click"]} placement="bottomRight">
-							<Badge count={4} offset={[-28, -2]}>
-								<BellOutlined style={{fontSize: 20, marginRight: 32, cursor: "pointer"}} />
-							</Badge>
-						</Dropdown>
+						<NotificationBell />
 					</div>
 					<div style={styles.userInfo}>
 						<span style={{fontWeight: 500}}>{user?.name}</span>
