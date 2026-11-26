@@ -27,9 +27,9 @@ export async function GET() {
 			}),
 		]);
 
-		// Latest of: date recorded by the NGO, or the latest certificate
-		const lastCertificateAt = certificates[0]?.generatedAt ?? null;
-		const lastDonatedAt = [donor.lastDonatedAt, lastCertificateAt].filter(Boolean).sort((a, b) => dayjs(b).valueOf() - dayjs(a).valueOf())[0] ?? null;
+		// lastDonatedAt is set when a certificate is issued (or entered by the NGO). Older certificates
+		// issued before that existed fall back to the certificate date.
+		const lastDonatedAt = donor.lastDonatedAt ?? certificates[0]?.generatedAt ?? null;
 		const gapDays = DONATION_GAP_DAYS[(donor.gender as keyof typeof DONATION_GAP_DAYS) ?? "other"] ?? DONATION_GAP_DAYS.other;
 		const nextEligibleAt = lastDonatedAt ? dayjs(lastDonatedAt).add(gapDays, "day").toDate() : null;
 

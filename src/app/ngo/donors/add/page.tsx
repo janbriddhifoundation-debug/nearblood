@@ -28,6 +28,7 @@ const Page: React.FC = () => {
 			bloodGroup: "",
 			address: "",
 			photo: "",
+			lastDonatedAt: "",
 		},
 		validationSchema: donorRegSchema,
 		onSubmit: async (values) => {
@@ -154,6 +155,19 @@ const Page: React.FC = () => {
 								<Button icon={<UploadOutlined />}>Click to Upload</Button>
 							</Upload>
 							{getError("photo") && <div className="text-red-500 text-xs py-2">{formik.errors.photo}</div>}
+						</div>
+
+						<div>
+							<label className="block font-medium mb-1 text-gray-600">Last donation date (optional)</label>
+							<DatePicker
+								style={{width: "100%"}}
+								format="DD MMM YYYY"
+								disabledDate={(date) => date.isAfter(dayjs())}
+								value={formik.values.lastDonatedAt ? dayjs(formik.values.lastDonatedAt) : null}
+								onChange={(date) => formik.setFieldValue("lastDonatedAt", date ? date.format("YYYY-MM-DD") : "")}
+								placeholder="If they donated before"
+							/>
+							{getError("lastDonatedAt") && <div className="text-red-500 text-xs py-2">{formik.errors.lastDonatedAt}</div>}
 						</div>
 					</div>
 

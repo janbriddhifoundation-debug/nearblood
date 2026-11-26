@@ -150,11 +150,29 @@ export async function POST(req: NextRequest) {
 
     const certificateNumber = await generateCertificateNumber();
 
-    const certificate = await prisma.donationCertificate.create({
-      data: {
-        certificateNumber,
-        requestDonorId: requestDonor.id,
-      },
+    // Issuing the certificate is when the donation counts as verified: also record
+    // the donor's last donation date (the day blood was needed, never in the future)
+    // so their next-eligible date is right.
+    const requirementDate = requestDonor.Request?.requirementDate;
+    const donatedAt = requirementDate && requirementDate < new Date() ? requirementDate : new Date();
+    const previousDonatedAt = requestDonor.Donor?.lastDonatedAt;
+
+    const certificate = await prisma.$transaction(async (tx) => {
+      const created = await tx.donationCertificate.create({
+        data: {
+          certificateNumber,
+          requestDonorId: requestDonor.id,
+        },
+      });
+
+      if (requestDonor.donorId && (!previousDonatedAt || previousDonatedAt < donatedAt)) {
+        await tx.donor.update({
+          where: {id: requestDonor.donorId},
+          data: {lastDonatedAt: donatedAt},
+        });
+      }
+
+      return created;
     });
 
     return NextResponse.json(

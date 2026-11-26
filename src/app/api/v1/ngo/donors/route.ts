@@ -90,10 +90,20 @@ export async function POST(req: NextRequest) {
 			throw error;
 		}
 
+		// Only the form's fields - never status, userId or source from the request body
+		const {name, gender, email, phone, dob, bloodGroup, address, photo, lastDonatedAt} = parsedData;
+
 		const newDonor = await prisma.donor.create({
 			data: {
-				...parsedData,
-				dob: new Date(parsedData.dob),
+				name,
+				gender,
+				email,
+				phone,
+				bloodGroup,
+				address,
+				photo,
+				dob: new Date(dob),
+				lastDonatedAt: lastDonatedAt ? new Date(lastDonatedAt) : null,
 				organisationId: user.organisationId,
 			},
 		});

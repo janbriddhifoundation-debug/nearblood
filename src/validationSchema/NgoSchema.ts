@@ -35,6 +35,13 @@ export const donorRegSchema = Yup.object().shape({
 	address: Yup.string().trim().min(10, "Address must be at least 10 characters").required("Address is required"),
 
 	photo: Yup.string().required("Photo is required"),
+
+	// Optional: when the donor last gave blood (outside NearBlood too), for eligibility
+	lastDonatedAt: Yup.date()
+		.nullable()
+		.transform((value, originalValue) => (originalValue === "" ? null : value))
+		// Checked at validation time (not module load) so "today" stays current on a long-running server
+		.test("not-in-future", "Last donation date can't be in the future", (value) => !value || value <= new Date()),
 });
 
 export const assignDonorsSchema = Yup.object().shape({

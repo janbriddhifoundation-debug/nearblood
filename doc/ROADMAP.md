@@ -8,9 +8,9 @@ _Last updated: 2026-11-26_
 |---|---|
 | Sign-in | Google only. First login picks a role in a pop-up (Requester or NGO). Admin is set by hand in the DB. |
 | NGO | Registration → admin approval → dashboard. Built: requests near their regions, donors, assign donors, donation verification, certificates (QR, public verify), events, reports, impact, profile. Placeholders: Communication & notification, Support & helpdesk. Dashboard home is two count cards. |
-| Super admin | Built: dashboard stats, blood request monitoring, NGO management/approval. Placeholders: 10 menu items (users, donor oversight, proof control, certificates & branding, events, reports, settings, logs, staff, support). |
+| Super admin | Built: dashboard stats, blood request monitoring, NGO management/approval, donor & donation oversight. Placeholders: 9 menu items (users, proof control, certificates & branding, events, reports, settings, logs, staff, support). |
 | Requester (`user`) | Built but hidden from the public: raise request, track status, upload proof. "Support initiative" page is a stub (mock upload, old "Floating Blood Bank" name). |
-| Donor | Exists only as rows NGOs type in. Donors have no login. |
+| Donor | Self sign-up with nearby-NGO picker, NGO approval, donor dashboard (donations, certificates, profile). Same account can also request blood. |
 | Public site | Home page is a placeholder hero. Certificate verification page works. |
 
 Known risk left (see Phase 0): the migrations folder no longer matches the database.
@@ -38,7 +38,12 @@ Left:
 
 Decisions taken: self sign-ups need **NGO approval**; "nearby" = NGOs covering a region within **25 km**, **or** a region naming the donor's city, **or** a wider region (district/state) the donor is inside; plus name search across all approved NGOs. If none match, the donor sees "No NGO is working in your area yet" with WhatsApp / copy invite buttons for an NGO they know. Schema SQL: `doc/sql/2026-11-26_donor_self_signup.sql` (applied to the dev DB).
 
-Still to do for this phase: admin donor oversight page; NGO can record `lastDonatedAt` when verifying a donation; NGO notified of new pending donors (needs Phase 3 notifications).
+Also done (2026-11-26):
+- **Admin → Donor & donation oversight** (`/admin/donor-donation-oversight`): totals (donors, pending approval, available, certified donations, closed requests without a certificate), approved donors by blood group, a filterable Donors tab (status, how they joined, blood group, NGO, search) and a Donations tab (every assignment with request stage and certificate).
+- **Last donation date:** set automatically when an NGO issues a certificate (the request's required date); NGOs can also enter it when adding a donor who donated before. Existing certified donors were backfilled (`doc/sql/2026-11-26_backfill_last_donated_at.sql`).
+- NGO add-donor API no longer copies the raw request body into the database.
+
+Moved to Phase 3: notify the NGO when a donor signs up under them.
 
 The design as built:
 
@@ -94,6 +99,7 @@ Existing rows: `status = APPROVED`, `source = NGO`.
 ## Phase 3 — Finish the NGO dashboard
 
 - Real dashboard overview: open requests near them, pending donor approvals, upcoming events, units this month.
+- Notify the NGO when a donor signs up under them (and the donor when approved/rejected).
 - Communication & notification: in-app notifications (replaces the fake bell), message donors by blood group or area.
 - Support & helpdesk: tickets to the platform team (shared with admin Support & grievance).
 - Events: donors register for camps (an `EventRegistration` table instead of the bare `registeredDonors` count), attendance, units collected.

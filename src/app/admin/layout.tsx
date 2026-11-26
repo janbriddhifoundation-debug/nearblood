@@ -88,7 +88,7 @@ export default function NgoLayout({children}: {children: React.ReactNode}) {
 		{
 			key: "/admin/donor-donation-oversight",
 			icon: <AuditOutlined />,
-			label: "Donar donation oversight",
+			label: "Donor & donation oversight",
 		},
 		{
 			key: "/admin/proof-verification",
